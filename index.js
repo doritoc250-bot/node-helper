@@ -8,10 +8,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const server = createServer(app);
 
-app.use(express.static(join(__dirname, 'public')));
 app.use('/uv/', express.static(join(__dirname, 'public/uv')));
+app.use('/service/', express.static(join(__dirname, 'public/service')));
+app.use(express.static(join(__dirname, 'public')));
 
-app.use((req, res) => res.status(404).send('Not found'));
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'index.html'));
+});
 
 const wss = new WebSocketServer({ server, path: '/wisp/' });
 wss.on('connection', (ws) => ws.on('error', console.error));
