@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Study Helper</title>
+  <script src="/uv/uv.bundle.js"></script>
+  <script src="/uv/uv.config.js"></script>
+</head>
+<body>
+  <form id="form">
+    <input id="url" type="text" placeholder="Search or enter URL"/>
+    <button type="submit">Go</button>
+  </form>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/uv/uv.sw.js', { scope: '/service/' });
+    }
+    document.getElementById('form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var val = document.getElementById('url').value;
+      var url = val.startsWith('http') ? val : 'https://www.google.com/search?q=' + encodeURIComponent(val);
+      var encoded = __uv$config.encodeUrl(url);
+      location.href = '/service/' + encoded;
+    });
+  </script>
+</body>
+</html>
