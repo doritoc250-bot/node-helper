@@ -1,27 +1,38 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Study Helper</title>
-  <script src="/uv/uv.bundle.js"></script>
-  <script src="/uv/uv.config.js"></script>
-</head>
-<body>
-  <form id="form">
-    <input id="url" type="text" placeholder="Search or enter URL"/>
-    <button type="submit">Go</button>
-  </form>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/uv/uv.sw.js', { scope: '/service/' });
-    }
-    document.getElementById('form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var val = document.getElementById('url').value;
-      var url = val.startsWith('http') ? val : 'https://www.google.com/search?q=' + encodeURIComponent(val);
-      var encoded = __uv$config.encodeUrl(url);
-      location.href = '/service/' + encoded;
-    });
-  </script>
-</body>
-</html>
+import express from 'express';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import { fileURLToPath } from 'url';
+import { join, dirname } from 'path';
+import { existsSync } from 'fs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+console.log('dirname:', __dirname);
+console.log('public exists:', existsSync(join(__dirname, 'public')));
+console.log('index exists:', existsSync(join(__dirname, 'public/index.html')));
+
+const app = express();
+const server = createServer(app);
+
+app.use('/uv/', express.static(join(__dirname, 'public/uv')));
+app.use(express.static(join(__dirname, 'public')));
+
+app.get('*', (req, res) => {
+  const indexPath = join(__dirname, 'public/index.html');
+  if (existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.send('index.html not found at: ' + indexPath);
+  }
+});
+
+const wss = new WebSocketServer({ server, path: '/wisp/' });
+wss.on('connection', (ws) => ws.on('error', console.error));
+
+const port = parseInt(process.env.PORT || '8080');
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Running on port ${port}`);
+  setInterval(async () => {
+    try { await fetch(`http://localhost:${port}`); } catch(e) {}
+  }, 4 * 60 * 1000);
+});
